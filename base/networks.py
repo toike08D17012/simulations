@@ -12,14 +12,12 @@ class CreateNetwork():
         num_agents: int,
         delay_max: int,
         delay_rate: int,
-        seed: int = 0
     ):
         """
         Args:
             num_agents(int): The number of agents.
             delay_max(int): The maximum steps of time delay.
             delay_rate(int): 遅延1stepの場合の遅延確率(2step以降の場合は"int(delay_rate / i step)"に従って計算)
-            seed(int): The seed of random number.
         """
         self.num_agents = num_agents
         self.delay_max = delay_max
@@ -96,7 +94,7 @@ class CreateNetwork():
         return adjs
 
     def _save_graph(self, save_dir, adjs, figsize=(11, 11), dpi=60):
-        save_dir.mkdir(exists_ok=True, parents=True)
+        save_dir.mkdir(exist_ok=True, parents=True)
         for idx, adj in enumerate(adjs):
             # selfループを描画しないように隣接行列を修正
             for j in range(self.num_agents):
@@ -127,13 +125,17 @@ class CreateNetwork():
             plt.clf()
             plt.close()
 
-    def create_weight_graph(self, adj: np.ndarray):
+    def create_weight_matrix(self, adj: np.ndarray):
         expand_matrix = self._create_expand_graph(adj)
-        weight_matrix = self._create_weight_matrix(expand_matrix)
+        weight_matrix = self._calculate_weight_matrix(expand_matrix)
 
         return weight_matrix
 
     def _create_expand_graph(self, adj):
+        # When there is no delay, return original graph.
+        if self.delay_max == 0:
+            return adj
+
         # 何ステップ遅延するか決定
         tau = np.random.randint(0, 100, (self.num_agents, self.num_agents))
         delay_times = range(1, self.delay_max)
@@ -162,6 +164,6 @@ class CreateNetwork():
 
         return expand_adj
 
-    def _create_weight_matrix(self, expand_graph):
+    def _calculate_weight_matrix(self, expand_graph):
         weight_matrix = expand_graph / np.sum(expand_graph, axis=0)
         return weight_matrix
